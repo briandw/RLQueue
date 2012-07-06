@@ -1,13 +1,23 @@
+//The MIT License (MIT) Copyright (c) 2011 Brian D Williams
 //
-//  ImageDBFileMetaData.m
-//  rawimagetest
+//Permission is hereby granted, free of charge, to any person obtaining a copy of
+//this software and associated documentation files (the "Software"), to deal in
+//the Software without restriction, including without limitation the rights to
+//use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+//the Software, and to permit persons to whom the Software is furnished to do so,
+//subject to the following conditions:
 //
-//  Created by Brian Williams on 6/10/11.
-//  Copyright 2011 __MyCompanyName__. All rights reserved.
+//The above copyright notice and this permission notice shall be included in all
+//copies or substantial portions of the Software.
 //
+//THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+//FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+//COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+//IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+//CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 #import "RLImageDBFile.h"
-#import "RLImageDB.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -17,10 +27,8 @@
 
 
 /*
- ---------------------- WARNING ---------------------- 
- This class is exempted from ARC
- Retain and Release must continue to be used
- remove the compiler flag -fno-objc-arc to use arc, but you must do the conversion first
+ This can not be compiled with ARC
+ Add the compiler flag -fno-objc-arc to use in an arc project
  */
 
 
@@ -33,7 +41,7 @@ typedef struct
     UInt32  length;
 }RLImageHeader;
 
-//this makes cf object autorelease-able
+//this makes cf objects autorelease-able
 #define RLCFAutorelease(cf) ((__typeof(cf))[NSMakeCollectable(cf) autorelease])
 
 #define dbMaxImageWidth     386 //pixels
@@ -47,14 +55,17 @@ typedef struct
 //the total length of this file on disk
 #define dbFileLength        dbHeaderLength + (dbMaxImageLength * dbImagesPerFile) //bytes
 
+@interface RLImageDBFile ()
+
+@property (nonatomic, assign)BOOL isOpen;
+@end
+
 @implementation RLImageDBFile
 
-@synthesize fileNumber = _fileNumber;
-@synthesize isOpen = _open;
 @dynamic isFull;
-@dynamic isEmpty;
+@synthesize isOpen = _isOpen;
 
-+ (NSString *)dbDirectoryPath
++ (NSString *)dbFilePath
 {
     static NSString *dbDirPath = nil;
     
@@ -68,24 +79,20 @@ typedef struct
         }
     }
     
-	return dbDirPath;
+   return [NSString stringWithFormat:@"%@/imgDB",dbDirPath];
 }
 
-- (id)initWithFileNumber:(NSNumber *)fileNumber
+
+- (id)init
 {
     self = [super init];
     if (self)
     {
-        _closeAndDelete = NO;
-        _closing = NO;
-        _open = NO;
-        self.fileNumber = fileNumber;
         _openImageProviders = 0;
         _accessCounter = 0;
         _openSlots = dbImagesPerFile;
         _mapFileDescriptor = -1;
-        
-        RLImgDBLog(@"init imdbfile %p, num%@", self, _fileNumber);
+        _isOpen = NO;
     }
     
     return self;
@@ -93,33 +100,23 @@ typedef struct
 
 - (void)dealloc
 {   
-    RLImgDBLog(@"dealloc imdbfile %p, num%@", self, _fileNumber);
-    [self close:YES];
-    NSAssert(!_closeAndDelete, @"ImageDB is getting dealloced without deleting the file first");
-    [_fileNumber release];
+    [self close];
     [super dealloc];
 }
 
-- (NSString *)dbFilePath
-{
-    NSString *imageDirectory = [[self class] dbDirectoryPath];
-    return [NSString stringWithFormat:@"%@/imgDB%@.dat", imageDirectory, _fileNumber];
-}
 
 - (void)openOnMainThread
 {
-    if (!_open && _fileNumber)
+    if (!_isOpen)
     {        
-        RLImgDBLog(@"opening dbfile %p %@", self, self.fileNumber);
         
-        NSString *imageDBPath = [self dbFilePath];
+        NSString *imageDBPath = [NSString stringWithFormat:@"%@/imgDB",[RLImageDBFile dbFilePath]];
         BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
         
         //if there is no file, make one
-        _open = YES;
+        _isOpen = YES;
         if (!exists)
         {
-            RLImgDBLog(@"creating dbfile %@", self.fileNumber);
             
             NSAssert(sizeof(RLImageHeader) == dbHeaderSize,@"doh math is hard");
             void *zeroData = malloc(dbFileLength);
@@ -127,17 +124,16 @@ typedef struct
             NSData *tmpData = [NSData dataWithBytes:zeroData length:dbFileLength];
             
             NSError *error = nil;
-            _open = [tmpData writeToFile:imageDBPath options:(NSDataWritingAtomic |NSDataWritingFileProtectionNone ) error:&error];
+            _isOpen = [tmpData writeToFile:imageDBPath options:(NSDataWritingAtomic |NSDataWritingFileProtectionNone ) error:&error];
         }
         
-        if (_open)
+        if (_isOpen)
         {
             //get the file descriptor
             _mapFileDescriptor = open([imageDBPath cStringUsingEncoding:NSASCIIStringEncoding], O_RDWR);
             
             if(_mapFileDescriptor >=0)
             {
-                RLImgDBLog(@"opended file %@ FD=%i", imageDBPath, _mapFileDescriptor);
                 //create the memorymap
                 _imageDataMap = mmap( NULL , dbFileLength , PROT_READ | PROT_WRITE, MAP_SHARED, _mapFileDescriptor, 0);
                 
@@ -154,12 +150,12 @@ typedef struct
             }
             else
             {
-                _open = NO;
+                _isOpen = NO;
             }
         }
     }
     
-    if(!_open)
+    if(!_isOpen)
     {
         NSLog(@"Error, can't open imageDB");
     }
@@ -167,10 +163,9 @@ typedef struct
 
 - (void)open
 {
-    NSAssert(!_closing, @"Can't open this file while it's closing");
-    NSAssert(!_closeAndDelete, @"Opening a file that should be deleted");
+
     OSAtomicIncrement32(&_accessCounter);
-    if (!_open)
+    if (!_isOpen)
     {
         //open and close must happen on the main thread
         if (![NSThread isMainThread])
@@ -185,13 +180,10 @@ typedef struct
     OSAtomicDecrement32Barrier(&_accessCounter);
 }
 
-- (void)closeOnMainThread:(NSNumber *)forceNum
+- (void)closeOnMainThread
 {
-    BOOL force = [forceNum boolValue];
-    if ( _open  && (force || (_accessCounter == 0 && _openImageProviders == 0)) )
+    RLAssert( _isOpen  && (_accessCounter == 0 && _openImageProviders == 0), @"Closing in unsafe condition" );
     {
-        RLImgDBLog(@"closing file %i", _mapFileDescriptor);
-        
         int success = munmap(_imageDataMap, dbFileLength);
         if (success < 0)
         {
@@ -205,29 +197,19 @@ typedef struct
             NSLog(@"error closing file %i", errno);
         }
         _mapFileDescriptor = -1;
-        _open = NO;
-    
-        RLImgDBLog(@"closed dbfile %p %@", self, self.fileNumber);
-        //if previously this was marked as to be deleted, kill it
-        if (_closeAndDelete)
-        {
-            [self deleteFileOnDisk];
-            _closeAndDelete = NO;
-        }
+        _isOpen = NO;
     }
 }
 
-- (void)close:(BOOL)force
+- (void)close
 {
-    _closing = YES;
-    NSNumber *forceNum = [NSNumber numberWithBool:force];
     if (![NSThread isMainThread])
     {
-        [self performSelectorOnMainThread:@selector(closeOnMainThread:) withObject:forceNum waitUntilDone:YES];
+        [self performSelectorOnMainThread:@selector(closeOnMainThread) withObject:nil waitUntilDone:YES];
     }
     else
     {
-        [self closeOnMainThread:forceNum];
+        [self closeOnMainThread];
     }
     
     _closing = NO;
@@ -238,16 +220,11 @@ typedef struct
     return (_openSlots < 1);
 }
 
-- (BOOL)isEmpty
-{
-    return (_openSlots == dbImagesPerFile);
-}
-
 //walk the header until the first open slot if found
 - (UInt8)nextOpenSlotInDataMap:(char *)map
 {
     UInt8 openSlot = RLImgDBNotFound;
-    if (_open)
+    if (_isOpen)
     {
         RLImageHeader *header = (RLImageHeader *)map;
         
@@ -272,7 +249,7 @@ typedef struct
 - (UInt8)saveImage:(UIImage *)image forSize:(RLIntSize)imgSize
 {    
    OSAtomicIncrement32(&_accessCounter);    
-    if (_closing || !_open)
+    if (!_isOpen)
     {
         [self open];
     }
@@ -296,15 +273,13 @@ typedef struct
     
     if(_openSlots < 1)
     {
-        RLImgDBLog(@"DB full %@", _fileNumber);
+        NSLog(@"DB full");
     }
     
     //find the slot offset
     char *imagePos = _imageDataMap+dbHeaderLength+(openSlot*dbMaxImageLength);
     //copy the data into place
     memcpy(imagePos, [data bytes], [data length]);
-    
-    RLImgDBLog(@"saving image to slot %i in db file %@", openSlot, self.fileNumber);
 
    OSAtomicDecrement32(&_accessCounter);    
     //return where we put the image
@@ -315,7 +290,7 @@ typedef struct
 {
     _openImageProviders--;
     
-    if (_openImageProviders == 0 && _closeAndDelete)
+    if (_openImageProviders == 0)
     {
         [self deleteFileOnDisk];
     }
@@ -336,14 +311,12 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
     OSAtomicIncrement32(&_accessCounter);
     
     NSAssert([NSThread isMainThread], @"Calling on background thread, don't");
-    if (!_open)
+    if (!_isOpen)
     {
         [self open];
     }
 
     CGImageRef cgImage = nil;
-    
-    RLImgDBLog(@"geting image for slot %i in db file %@", slot, self.fileNumber);
     
     RLImageHeader *header = (RLImageHeader *)_imageDataMap;
     if (header[slot].slotFilled)
@@ -394,14 +367,12 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
 {
     OSAtomicIncrement32(&_accessCounter);
     
-    if (!_open)
+    if (!_isOpen)
     {
         [self open];
     }
     
     UInt8 slot = [slotNumber unsignedIntValue];
-    
-    RLImgDBLog(@"freeing slot %i in db file %@", slot, self.fileNumber);
     
     RLImageHeader *header = (RLImageHeader *)_imageDataMap;
     
@@ -437,7 +408,7 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
         [self performSelectorOnMainThread:@selector(freeAllSlots) withObject:nil waitUntilDone:YES];
     }
     
-    if (!_open)
+    if (!_isOpen)
     {
         [self open];
     }
@@ -459,19 +430,18 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
         RLLog(@"Warning, deleting a non empty imageDB file. Open slots %i", _openSlots);
     }
     
-    if (_open)
+    if (_isOpen)
     {
-        [self close:YES];
+        [self close];
     }
     
-    if (_accessCounter == 0 && !_open)
+    if (_accessCounter == 0 && !_isOpen)
     {
-        NSString *imageDBPath = [self dbFilePath];
+        NSString *imageDBPath = [RLImageDBFile dbFilePath];
         BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
 
         if (exists)
         {
-            RLImgDBLog(@">>>>> Deleting imgdb file %p %@", self, self.fileNumber);
             
             NSError *error = nil;
             [[NSFileManager defaultManager] removeItemAtPath:imageDBPath error:&error];
@@ -481,23 +451,8 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
             }
         }
     }
-    else
-    {
-        _closeAndDelete = YES;
-    }
+
 }
 
-- (void)encodeWithCoder:(NSCoder *)encoder
-{
-    [encoder encodeObject:_fileNumber forKey:@"_fileNumber"];
-}
-
-- (id)initWithCoder:(NSCoder *)decoder
-{
-    NSNumber *fileNumber = [decoder decodeObjectForKey:@"_fileNumber"];
-    self = [self initWithFileNumber:fileNumber];
-    
-    return self;
-}
 
 @end

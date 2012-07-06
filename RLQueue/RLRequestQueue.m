@@ -68,7 +68,7 @@ static CFStringRef ExampleObjectCopyDescription(const void* ptr)
 {
     RLOperation *operation = (RLOperation *) ptr;
     CFStringRef desc = (CFStringRef) [operation description];
-    return desc;
+    return CFRetain(desc);
 }
 
 static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr2, void* context)
