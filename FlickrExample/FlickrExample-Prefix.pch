@@ -12,3 +12,19 @@
 	#import <UIKit/UIKit.h>
 	#import <Foundation/Foundation.h>
 #endif
+
+#ifdef DEBUG
+
+#define RLAssert(condition, message) NSAssert(condition, message)
+//#define RLLog(fmt, ...) NSLog(fmt, __VA_ARGS__)
+#define RLLog(fmt, ...) // turn it off
+
+#define Debugger { kill( getpid(), SIGINT ) ; }
+
+#else
+
+#define OGAssert(condition, message) if(!(condition))NSLog(@"RLAssert fired: %@", message)
+#define OGLog(fmt, ...)
+#define Debugger
+
+#endif

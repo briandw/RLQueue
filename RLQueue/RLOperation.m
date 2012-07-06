@@ -40,6 +40,7 @@
 @synthesize successBlock = _successBlock;
 @synthesize errorBlock = _errorBlock;
 @synthesize processingBlock = _processingBlock;
+@synthesize heapId = _heapId;
 
 //designated initalizer
 - (id)initWithName:(NSString *)initName
@@ -106,10 +107,17 @@
 	}
 }
 
-- (void)makeHighPriority
+- (RLOperation *)makeHighPriority
 {
-	self.priority = RLOperationHigh;
-	[[RLRequestQueue sharedQueue] reHeapify];
+    RLOperation *returnOperation = self;
+    if (self.priority > RLOperationHigh)
+    {
+        self.priority = RLOperationHigh;
+        [self cancelOperation];
+        returnOperation = [self copy];
+    }
+    
+    return returnOperation;
 }
 
 - (void)finish
@@ -132,6 +140,18 @@
 	}
 	
 	NSLog(@"completed operation %@", [self description]);
+}
+
+- (id)copyWithZone:(NSZone *)zone
+{
+    RLOperation *copy = [[self class] allocWithZone:zone];
+    copy = [copy initWithName:self.name
+              priority:self.priority
+       processingBlock:self.processingBlock
+          successBlock:self.successBlock
+            errorBlock:self.errorBlock];
+    
+    return copy;
 }
 
 // This method is not required

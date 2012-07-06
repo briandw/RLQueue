@@ -40,6 +40,8 @@
     self = [super initWithName:@"Flicker Search" andPriority:priority];
     if (self)
     {
+        self.searchText = searchString;
+        
 		NSString *urlString = 
 		[NSString stringWithFormat:
 		 @"http://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=%@&tags=%@&per_page=25&format=json&nojsoncallback=1", 
@@ -71,5 +73,13 @@
     return self;
 }
 
+- (id)copyWithZone:(NSZone *)zone
+{
+    RLFlickrSearchOperation *copy = [super copyWithZone:zone];
+    
+    copy.url = self.url;
+    
+    return copy;
+}
 
 @end

@@ -9,7 +9,7 @@
 #ifndef RLQueue_FlickrKey_h
 #define RLQueue_FlickrKey_h
 
-#warning a Flickr key is required to run the demo
-NSString *const FlickrAPIKey = @"";
+//#warning a Flickr key is required to run the demo
+NSString *const FlickrAPIKey = @"261f9fb842b1897ea6df59339c6bb3a8";
 
 #endif

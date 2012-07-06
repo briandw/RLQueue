@@ -42,6 +42,7 @@
 	dispatch_queue_t _operationQueue;
 	NSUInteger _currentlyRunningOperaions;
 	BOOL _queueIsRunning;
+    volatile NSInteger _nextOperationNumber;
 }
 
 + (RLRequestQueue *)sharedQueue;
@@ -57,7 +58,5 @@
 
 // Adds an object to the queue
 - (void)addOperation:(RLOperation *)operation;
-
-- (void)reHeapify;
 
 @end

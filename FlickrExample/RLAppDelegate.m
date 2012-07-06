@@ -45,7 +45,7 @@
 	
 	RLRequestQueue *queue = [RLRequestQueue sharedQueue];
 		
-	RLOperation *op = [[RLFlickrSearchOperation alloc] initWithSearchString:@"Snow Leopard" andPriority:RLOperationHigh];
+	RLOperation *op = [[RLFlickrSearchOperation alloc] initWithSearchString:@"Leopard" andPriority:RLOperationHigh];
 	[queue addOperation:op];
 	
 	[queue startQueue];

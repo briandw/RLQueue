@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D32F765415A6A0F400FCE9C2 /* RLImageDB.m in Sources */ = {isa = PBXBuildFile; fileRef = D32F764F15A6A0F400FCE9C2 /* RLImageDB.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		D32F765515A6A0F400FCE9C2 /* RLImageDBFile.m in Sources */ = {isa = PBXBuildFile; fileRef = D32F765115A6A0F400FCE9C2 /* RLImageDBFile.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
+		D32F765615A6A0F400FCE9C2 /* UIImageAdditions.m in Sources */ = {isa = PBXBuildFile; fileRef = D32F765315A6A0F400FCE9C2 /* UIImageAdditions.m */; settings = {COMPILER_FLAGS = "-fno-objc-arc"; }; };
 		D33D73491495CB6A00651640 /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D33D73481495CB6A00651640 /* UIKit.framework */; };
 		D33D734B1495CB6A00651640 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D33D734A1495CB6A00651640 /* Foundation.framework */; };
 		D33D734D1495CB6A00651640 /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D33D734C1495CB6A00651640 /* CoreGraphics.framework */; };
@@ -26,6 +29,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		D32F764E15A6A0F400FCE9C2 /* RLImageDB.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RLImageDB.h; sourceTree = "<group>"; };
+		D32F764F15A6A0F400FCE9C2 /* RLImageDB.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RLImageDB.m; sourceTree = "<group>"; };
+		D32F765015A6A0F400FCE9C2 /* RLImageDBFile.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = RLImageDBFile.h; sourceTree = "<group>"; };
+		D32F765115A6A0F400FCE9C2 /* RLImageDBFile.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RLImageDBFile.m; sourceTree = "<group>"; };
+		D32F765215A6A0F400FCE9C2 /* UIImageAdditions.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = UIImageAdditions.h; sourceTree = "<group>"; };
+		D32F765315A6A0F400FCE9C2 /* UIImageAdditions.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = UIImageAdditions.m; sourceTree = "<group>"; };
+		D32F765815A6A32E00FCE9C2 /* SynthesizeSingleton.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = SynthesizeSingleton.h; path = RLImageDB/SynthesizeSingleton.h; sourceTree = SOURCE_ROOT; };
 		D33D73441495CB6A00651640 /* FlickrExample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FlickrExample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		D33D73481495CB6A00651640 /* UIKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = UIKit.framework; path = System/Library/Frameworks/UIKit.framework; sourceTree = SDKROOT; };
 		D33D734A1495CB6A00651640 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
@@ -82,6 +92,19 @@
 			name = Model;
 			sourceTree = "<group>";
 		};
+		D32F764D15A6A0F400FCE9C2 /* RLImageDB */ = {
+			isa = PBXGroup;
+			children = (
+				D32F764E15A6A0F400FCE9C2 /* RLImageDB.h */,
+				D32F764F15A6A0F400FCE9C2 /* RLImageDB.m */,
+				D32F765015A6A0F400FCE9C2 /* RLImageDBFile.h */,
+				D32F765115A6A0F400FCE9C2 /* RLImageDBFile.m */,
+				D32F765215A6A0F400FCE9C2 /* UIImageAdditions.h */,
+				D32F765315A6A0F400FCE9C2 /* UIImageAdditions.m */,
+			);
+			path = RLImageDB;
+			sourceTree = SOURCE_ROOT;
+		};
 		D33D73391495CB6900651640 = {
 			isa = PBXGroup;
 			children = (
@@ -115,6 +138,7 @@
 				D3AD4C7C14AA8F2D00E7A736 /* FlickrKey.h */,
 				D3AD4CB114AA990B00E7A736 /* RLAppDelegate.h */,
 				D3AD4CB214AA990B00E7A736 /* RLAppDelegate.m */,
+				D32F764D15A6A0F400FCE9C2 /* RLImageDB */,
 				D3AD4C7D14AA8F8C00E7A736 /* RLQueue */,
 				D31E8629149E65AA00C824A1 /* Model */,
 				D3AD4CA314AA90A400E7A736 /* FlickrOperations */,
@@ -150,6 +174,7 @@
 		D3AD4C7D14AA8F8C00E7A736 /* RLQueue */ = {
 			isa = PBXGroup;
 			children = (
+				D32F765815A6A32E00FCE9C2 /* SynthesizeSingleton.h */,
 				D3AD4C8214AA8F8C00E7A736 /* RLRequestQueue.h */,
 				D3AD4C8314AA8F8C00E7A736 /* RLRequestQueue.m */,
 				D3AD4C8014AA8F8C00E7A736 /* RLOperation.h */,
@@ -215,7 +240,7 @@
 		D33D733B1495CB6900651640 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0420;
+				LastUpgradeCheck = 0430;
 			};
 			buildConfigurationList = D33D733E1495CB6900651640 /* Build configuration list for PBXProject "FlickrExample" */;
 			compatibilityVersion = "Xcode 3.2";
@@ -262,6 +287,9 @@
 				D3AD4CA614AA90A400E7A736 /* RLFlickrSearchOperation.m in Sources */,
 				D3AD4CAB14AA91DB00E7A736 /* main.m in Sources */,
 				D3AD4CB314AA990C00E7A736 /* RLAppDelegate.m in Sources */,
+				D32F765415A6A0F400FCE9C2 /* RLImageDB.m in Sources */,
+				D32F765515A6A0F400FCE9C2 /* RLImageDBFile.m in Sources */,
+				D32F765615A6A0F400FCE9C2 /* UIImageAdditions.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -30,6 +30,7 @@
 
 typedef enum
 {
+    //must be less than 16
 	RLOperationHigh = 0,
 	RLOperationMedium,
 	RLOperationLow,
@@ -41,7 +42,7 @@ typedef enum
 typedef void (^OperationBlockType)(RLOperation *operation);
 typedef void (^OperationErrorBlockType)(RLOperation *operation, NSError *error);
 
-@interface RLOperation : NSObject
+@interface RLOperation : NSObject <NSCopying>
 {
 }
 
@@ -51,7 +52,8 @@ typedef void (^OperationErrorBlockType)(RLOperation *operation, NSError *error);
 
 @property (nonatomic, strong) NSString *name;
 @property (nonatomic, strong) NSError *error;
-@property (nonatomic) RLOperationPriority priority;
+@property (nonatomic, assign) RLOperationPriority priority;
+@property (nonatomic, assign) NSInteger heapId;
 @property (readonly) BOOL running;
 @property (readonly) BOOL canceled;
 
@@ -73,7 +75,8 @@ typedef void (^OperationErrorBlockType)(RLOperation *operation, NSError *error);
 //called from the queue. don't override
 - (void)run;
 
-- (void)makeHighPriority;
+//cancels the current operation and creates a new high priority one
+- (RLOperation *)makeHighPriority;
 
 //used to stop an operation before being run
 - (void)cancelOperation;

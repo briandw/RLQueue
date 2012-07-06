@@ -28,6 +28,7 @@
 
 #import "RLRequestQueue.h"
 #import "RLOperation.h"
+#import <libkern/OSAtomic.h>
 
 @interface RLRequestQueue()
 
@@ -81,7 +82,7 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
 	{
         return kCFCompareLessThan;
     }
-	else if ([item1 priority] == [item2 priority])
+	else if ([item1 heapId] == [item2 heapId])
 	{
         return kCFCompareEqualTo;
     }
@@ -106,6 +107,7 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
 {
     if ((self = [super init]))
 	{
+        _nextOperationNumber = 0;
 		_currentlyRunningOperaions = 0;
 		_queueIsRunning = NO;
         CFBinaryHeapCallBacks callbacks;
@@ -214,7 +216,14 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
 
 - (void)addOperation:(RLOperation *)operation
 {
+    _nextOperationNumber++;
+    if (_nextOperationNumber > 0xFFFFFFF)
+    {
+        _nextOperationNumber = 0;
+    }
 	//NSLog(@"adding operation to queue: %@", [operation description]);
+    int priorityBitShift = operation.priority << 28;
+    operation.heapId = _nextOperationNumber + priorityBitShift;
     CFBinaryHeapAddValue(_heap, operation);
 	[self checkQueue];
 }
@@ -234,11 +243,6 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
 - (RLOperation *)peekOperation
 {
     return (RLOperation *)CFBinaryHeapGetMinimum(_heap);
-}
-
-- (void)reHeapify
-{
-	NSAssert(NO, @"this isn't implemented yet");
 }
 
 @end

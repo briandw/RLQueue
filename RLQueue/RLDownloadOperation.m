@@ -69,4 +69,13 @@
 	}
 }
 
+- (id)copyWithZone:(NSZone *)zone
+{
+    RLDownloadOperation *copy = [super copyWithZone:zone];
+    
+    copy.url = self.url;
+    
+    return copy;
+}
+
 @end
