@@ -51,9 +51,9 @@ extern inline RLIntSize RLIntSizeMake(UInt16 width, UInt16 height);
  */
 //kCGImageAlphaNoneSkipFirst
 //-RRRRRGGGGGBBBBB 16 bits per pixel, 5 bits per RGB component.
-#define kOGBitsPerComponent 5
-#define kOGBytesPerPixel    2
-#define kOGBitsPerPixel    16
+#define kRLBitsPerComponent 5
+#define kRLBytesPerPixel    2
+#define kRLBitsPerPixel    16
 
 @interface UIImage (UIImageAdditions) 
 

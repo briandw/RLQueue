@@ -29,6 +29,7 @@
 #import "RLRequestQueue.h"
 #import "RLOperation.h"
 #import <libkern/OSAtomic.h>
+#import "SynthesizeSingleton.h"
 
 @interface RLRequestQueue()
 
@@ -52,26 +53,26 @@
 #pragma mark -
 #pragma mark CFBinaryHeap functions for sorting the priority queue
 
-static const void *ExampleObjectRetain(CFAllocatorRef allocator, const void *ptr)
+static const void *RLObjectRetain(CFAllocatorRef allocator, const void *ptr)
 {
     RLOperation *operation = (RLOperation *)ptr;
     return [operation retain];
 }
 
-static void ExampleObjectRelease(CFAllocatorRef allocator, const void *ptr)
+static void RLObjectRelease(CFAllocatorRef allocator, const void *ptr)
 {
     RLOperation *operation = (RLOperation *) ptr;
     [operation release];
 }
 
-static CFStringRef ExampleObjectCopyDescription(const void* ptr)
+static CFStringRef RLObjectCopyDescription(const void* ptr)
 {
     RLOperation *operation = (RLOperation *) ptr;
     CFStringRef desc = (CFStringRef) [operation description];
     return CFRetain(desc);
 }
 
-static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr2, void* context)
+static CFComparisonResult RLObjectCompare(const void* ptr1, const void* ptr2, void* context)
 {
     RLOperation *item1 = (RLOperation *) ptr1;
     RLOperation *item2 = (RLOperation *) ptr2;
@@ -95,13 +96,7 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
 #pragma mark -
 #pragma mark NSObject methods
 
-+ (RLRequestQueue *)sharedQueue
-{
-    static dispatch_once_t once;
-    static RLRequestQueue *sharedQueue;
-    dispatch_once(&once, ^ { sharedQueue = [[self alloc] init]; });
-    return sharedQueue;
-}
+SYNTHESIZE_SINGLETON_FOR_CLASS (RLRequestQueue)
 
 - (id)init
 {
@@ -114,10 +109,10 @@ static CFComparisonResult ExampleObjectCompare(const void* ptr1, const void* ptr
         callbacks.version = 0;
 		
         // Callbacks to the functions above
-        callbacks.retain = ExampleObjectRetain;
-        callbacks.release = ExampleObjectRelease;
-        callbacks.copyDescription = ExampleObjectCopyDescription;
-        callbacks.compare = ExampleObjectCompare;
+        callbacks.retain = RLObjectRetain;
+        callbacks.release = RLObjectRelease;
+        callbacks.copyDescription = RLObjectCopyDescription;
+        callbacks.compare = RLObjectCompare;
 		
         // Create the priority queue
         _heap = CFBinaryHeapCreate(kCFAllocatorDefault, 0, &callbacks, NULL);

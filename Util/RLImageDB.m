@@ -17,13 +17,14 @@
 //IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 //CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-#import "RLImageDBFile.h"
+#import "RLImageDB.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <libkern/OSAtomic.h>
+#include "SynthesizeSingleton.h"
 
 
 /*
@@ -46,24 +47,22 @@ typedef struct
 
 #define dbMaxImageWidth     386 //pixels
 #define dbMaxImageHeight    386 //pixels
-#define dbMaxImageLength    kOGBytesPerPixel*dbMaxImageWidth*dbMaxImageHeight //bytes
-#define dbImagesPerFile     30 //images
+#define dbMaxImageLength    kRLBytesPerPixel*dbMaxImageWidth*dbMaxImageHeight //bytes
+#define dbImagesPerFile     300 //images
 #define dbHeaderSize        16 //bytes
 #define dbHeaderLength      dbHeaderSize*dbImagesPerFile //bytes
 
-//about 28MBs per file // 29 799 200 Bytes
+//about 85MBs per file // 297992 * 300 Bytes
+
 //the total length of this file on disk
 #define dbFileLength        dbHeaderLength + (dbMaxImageLength * dbImagesPerFile) //bytes
 
-@interface RLImageDBFile ()
 
-@property (nonatomic, assign)BOOL isOpen;
-@end
-
-@implementation RLImageDBFile
+@implementation RLImageDB
 
 @dynamic isFull;
-@synthesize isOpen = _isOpen;
+
+SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
 
 + (NSString *)dbFilePath
 {
@@ -79,7 +78,7 @@ typedef struct
         }
     }
     
-   return [NSString stringWithFormat:@"%@/imgDB",dbDirPath];
+   return [NSString stringWithFormat:@"%@/imgDB.dat", dbDirPath];
 }
 
 
@@ -89,7 +88,6 @@ typedef struct
     if (self)
     {
         _openImageProviders = 0;
-        _accessCounter = 0;
         _openSlots = dbImagesPerFile;
         _mapFileDescriptor = -1;
         _isOpen = NO;
@@ -105,12 +103,13 @@ typedef struct
 }
 
 
-- (void)openOnMainThread
+- (void)open
 {
+    RLAssert ([NSThread isMainThread], @"May only be opened on main thread");
     if (!_isOpen)
     {        
         
-        NSString *imageDBPath = [NSString stringWithFormat:@"%@/imgDB",[RLImageDBFile dbFilePath]];
+        NSString *imageDBPath = [RLImageDB dbFilePath];
         BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
         
         //if there is no file, make one
@@ -125,6 +124,8 @@ typedef struct
             
             NSError *error = nil;
             _isOpen = [tmpData writeToFile:imageDBPath options:(NSDataWritingAtomic |NSDataWritingFileProtectionNone ) error:&error];
+            
+            if(!_isOpen)NSLog(@"Error, %@", error);
         }
         
         if (_isOpen)
@@ -161,28 +162,12 @@ typedef struct
     }
 }
 
-- (void)open
-{
 
-    OSAtomicIncrement32(&_accessCounter);
-    if (!_isOpen)
-    {
-        //open and close must happen on the main thread
-        if (![NSThread isMainThread])
-        {
-            [self performSelectorOnMainThread:@selector(openOnMainThread) withObject:nil waitUntilDone:YES];
-        }
-        else
-        {
-            [self openOnMainThread];
-        }
-    }
-    OSAtomicDecrement32Barrier(&_accessCounter);
-}
-
-- (void)closeOnMainThread
+- (void)close
 {
-    RLAssert( _isOpen  && (_accessCounter == 0 && _openImageProviders == 0), @"Closing in unsafe condition" );
+    RLAssert ([NSThread isMainThread], @"May only be closed on main thread");
+    
+    RLAssert( _isOpen && _openImageProviders == 0, @"Closing in unsafe condition" );
     {
         int success = munmap(_imageDataMap, dbFileLength);
         if (success < 0)
@@ -201,19 +186,6 @@ typedef struct
     }
 }
 
-- (void)close
-{
-    if (![NSThread isMainThread])
-    {
-        [self performSelectorOnMainThread:@selector(closeOnMainThread) withObject:nil waitUntilDone:YES];
-    }
-    else
-    {
-        [self closeOnMainThread];
-    }
-    
-    _closing = NO;
-}
 
 - (BOOL)isFull
 {
@@ -221,9 +193,9 @@ typedef struct
 }
 
 //walk the header until the first open slot if found
-- (UInt8)nextOpenSlotInDataMap:(char *)map
+- (UInt16)nextOpenSlotInDataMap:(char *)map
 {
-    UInt8 openSlot = RLImgDBNotFound;
+    UInt16 openSlot = RLImgDBNotFound;
     if (_isOpen)
     {
         RLImageHeader *header = (RLImageHeader *)map;
@@ -246,16 +218,13 @@ typedef struct
     return openSlot;
 }
 
-- (UInt8)saveImage:(UIImage *)image forSize:(RLIntSize)imgSize
+- (UInt16)saveImage:(UIImage *)image forSize:(RLIntSize)imgSize
 {    
-   OSAtomicIncrement32(&_accessCounter);    
-    if (!_isOpen)
-    {
-        [self open];
-    }
+   
+    RLAssert(_isOpen, @"Can't save to a closed file");
     
     //get the next open slot
-    UInt8 openSlot = [self nextOpenSlotInDataMap:_imageDataMap];
+    UInt16 openSlot = [self nextOpenSlotInDataMap:_imageDataMap];
     RLImageHeader *header = (RLImageHeader *)_imageDataMap;
     NSAssert(openSlot != RLImgDBNotFound && header[openSlot].slotFilled == 0, @"Attempting to save in a full or not found slot");
     
@@ -280,8 +249,7 @@ typedef struct
     char *imagePos = _imageDataMap+dbHeaderLength+(openSlot*dbMaxImageLength);
     //copy the data into place
     memcpy(imagePos, [data bytes], [data length]);
-
-   OSAtomicDecrement32(&_accessCounter);    
+    
     //return where we put the image
     return openSlot;
 }
@@ -300,16 +268,14 @@ typedef struct
 void RLImageDBReleaseData (void *info, const void *data, size_t size);
 void RLImageDBReleaseData (void *info, const void *data, size_t size)
 {
-	[(RLImageDBFile*)info providerDone];
+	[(RLImageDB*)info providerDone];
 }
 
 //return an image for this slot.
 //this creates an image provider and points it at the mmap file
 //we increment the provider count so this wont be shut down prematurly
-- (CGImageRef)cgImageForSlot:(UInt8)slot
+- (CGImageRef)cgImageForSlot:(UInt16)slot
 {
-    OSAtomicIncrement32(&_accessCounter);
-    
     NSAssert([NSThread isMainThread], @"Calling on background thread, don't");
     if (!_isOpen)
     {
@@ -338,9 +304,9 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
         CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
         cgImage = CGImageCreate (width,
                                             height,                              
-                                            kOGBitsPerComponent,   // bits per component
-                                            kOGBitsPerPixel,        //bits per pixel
-                                            width*kOGBytesPerPixel, //bytes per row
+                                            kRLBitsPerComponent,   // bits per component
+                                            kRLBitsPerPixel,        //bits per pixel
+                                            width*kRLBytesPerPixel, //bytes per row
                                             colorSpace,
                                             (kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder16Little),
                                             provider,
@@ -355,24 +321,20 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
         cgImage = RLCFAutorelease(cgImage);
     }else
     {
-         NSLog(@"!!!! Error:trying to get an image from an empty slot");
+         NSLog(@"Error:trying to get an image from an empty slot");
     }
    
-     
-    OSAtomicDecrement32(&_accessCounter);
     return cgImage;
 }
 
-- (void)freeSlotOnMainThread:(NSNumber *)slotNumber
+//mark the image slot as free so it can be reused
+- (void)freeSlot:(UInt16)slot
 {
-    OSAtomicIncrement32(&_accessCounter);
     
     if (!_isOpen)
     {
         [self open];
     }
-    
-    UInt8 slot = [slotNumber unsignedIntValue];
     
     RLImageHeader *header = (RLImageHeader *)_imageDataMap;
     
@@ -384,21 +346,6 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
         NSAssert(_openSlots <= dbImagesPerFile, @"More slots free than possible for this file size");
     }
 
-    OSAtomicDecrement32(&_accessCounter);
-}
-
-//mark the image slot as free so it can be reused
-- (void)freeSlot:(UInt8)slot
-{
-    NSNumber *slotnumber = [NSNumber numberWithUnsignedInt:slot];
-    if (![NSThread isMainThread])
-    {
-        [self performSelectorOnMainThread:@selector(freeSlotOnMainThread:) withObject:slotnumber waitUntilDone:YES];
-    }
-    else
-    {
-        [self freeSlotOnMainThread:slotnumber];
-    }
 }
 
 - (void)freeAllSlots
@@ -425,33 +372,21 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
 //we are done with this file, free up the space
 - (void)deleteFileOnDisk
 {
-    if (_openSlots != dbImagesPerFile)
-    {
-        RLLog(@"Warning, deleting a non empty imageDB file. Open slots %i", _openSlots);
-    }
     
-    if (_isOpen)
-    {
-        [self close];
-    }
+    RLAssert(!_isOpen, @"File must be closed to delete");
     
-    if (_accessCounter == 0 && !_isOpen)
-    {
-        NSString *imageDBPath = [RLImageDBFile dbFilePath];
-        BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
+    NSString *imageDBPath = [RLImageDB dbFilePath];
+    BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
 
-        if (exists)
+    if (exists)
+    {
+        NSError *error = nil;
+        [[NSFileManager defaultManager] removeItemAtPath:imageDBPath error:&error];
+        if (error)
         {
-            
-            NSError *error = nil;
-            [[NSFileManager defaultManager] removeItemAtPath:imageDBPath error:&error];
-            if (error)
-            {
-                NSLog(@"Couldn't delete image db file %@ error:%@", imageDBPath, error);
-            }
+            NSLog(@"Couldn't delete image db file %@ error:%@", imageDBPath, error);
         }
     }
-
 }
 
 

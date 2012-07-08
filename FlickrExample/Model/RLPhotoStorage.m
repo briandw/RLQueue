@@ -24,8 +24,16 @@
 
 #import "RLPhotoStorage.h"
 #import "RLPhotoStub.h"
+#import "RLImageDB.h"
+
+@interface RLPhotoStorage ()
+    
+    @property (nonatomic, strong)RLImageDB *imageDB;
+@end
 
 @implementation RLPhotoStorage
+
+@synthesize imageDB = _imageDB;
 
 NSString *const RLNewPhotosNotification = @"RLNewPhotosNotification";
 
@@ -42,7 +50,9 @@ NSString *const RLNewPhotosNotification = @"RLNewPhotosNotification";
     self = [super init];
     if (self)
     {
-        _photosDict = [NSMutableDictionary dictionaryWithCapacity:100];
+        _photosDict = [NSMutableDictionary dictionaryWithCapacity:300];
+        _imageDB = [[RLImageDB alloc] init];
+        [_imageDB open];
     }
     return self;
 }

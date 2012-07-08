@@ -31,7 +31,7 @@
 + (RLPhotoStub *)stubWithDictionary:(NSDictionary *)dict;
 - (id)initWithDictionary:(NSDictionary *)dict;
 
-- (UIImage *)thumbnail;
+- (CGImageRef)thumbnail;
 
 - (void)loadThumbnail;
 - (void)loadLargeImage;
@@ -40,8 +40,7 @@
 @property (nonatomic, strong)NSString *title;
 @property (nonatomic, strong)NSString *photoURLString;
 @property (nonatomic, strong)NSString *thumbnailURLString;
-@property (nonatomic, strong)NSData *thumbnailData;
-@property (nonatomic, strong)UIImage *thumbnail;
+@property (nonatomic)        UInt16    thumbnailId;
 @property (nonatomic, strong)NSData *largeImageData;
 @property (nonatomic, assign)int downloadErrorCount;
 

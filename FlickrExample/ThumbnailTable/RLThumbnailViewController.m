@@ -98,7 +98,7 @@
     
 	RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
 	
-    cell.imageView.image = stub.thumbnail;
+    cell.layer.contents = (id)stub.thumbnail;
     
     return cell;
 }

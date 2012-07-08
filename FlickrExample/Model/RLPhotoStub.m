@@ -27,14 +27,14 @@
 #import "RLRequestQueue.h"
 #import "RLOperation.h"
 #import "RLDownloadOperation.h"
+#import "RLImageDB.h"
 
 @implementation RLPhotoStub
 
 @synthesize photoURLString = _photoURLString;
 @synthesize title = _title;
 @synthesize photoId = _photoId;
-@synthesize thumbnailData = _thumbnailData;
-@synthesize thumbnail = _thumbnail;
+@synthesize thumbnailId = _thumbnailId;
 @synthesize thumbnailURLString = _thumbnailURLString;
 @synthesize largeImageData = _largeImageData;
 @synthesize downloadErrorCount = _downloadErrorCount;
@@ -79,25 +79,48 @@
 		[NSString stringWithFormat:@"http://farm%@.static.flickr.com/%@/%@_%@_m.jpg", 
 		 [dict objectForKey:@"farm"], [dict objectForKey:@"server"], 
 		 _photoId, [dict objectForKey:@"secret"]];
+        
+        self.thumbnailId = RLImgDBNotFound;
     }
 	
     return self;
 }
 
+- (CGImageRef)thumbnail 
+{
+    if (self.thumbnailId != RLImgDBNotFound) {
+        
+        RLImageDB *imageDB = [RLImageDB singleton];
+        return [imageDB cgImageForSlot:self.thumbnailId];
+    }
+    
+    return NULL;
+}
+
 - (void)loadThumbnail
 {
-	if (!self.thumbnailData)
-	{
-		// The performance (scrolling) of the table will be much better if we
-		// build an array of the image data here, and then add this data as
-		// the cell.image value (see cellForRowAtIndexPath:)
-		//self.thumbnailData = [NSData dataWithContentsOfURL:[NSURL URLWithString:self.thumbnailURLString]];
-		
+
+	if (self.thumbnailId == RLImgDBNotFound)
+    {
 		OperationBlockType processingBlock = ^(RLOperation *operation)
 		{
 			RLDownloadOperation *op = (RLDownloadOperation *)operation;
-			self.thumbnailData = op.data;
-			self.thumbnail = [UIImage imageWithData:op.data];
+            RLImageDB *imageDB = [RLImageDB singleton];
+            UIImage *image = [UIImage imageWithData:op.data];
+            CGSize size = image.size;
+            if (size.width > dbMaxImageWidth || size.height > dbMaxImageHeight)
+            {
+                
+                if (size.width > size.height)
+                {
+                    
+                } else
+                {
+                    
+                }
+            }
+            RLIntSize tmpSize = RLIntSizeMake(size.width, size.height);
+            self.thumbnailId = [imageDB saveImage:image forSize:tmpSize]; 
 		};
 		
 		OperationBlockType successBlock = ^(RLOperation *operation)
@@ -110,7 +133,7 @@
 			self.downloadErrorCount = self.downloadErrorCount+1;
 		};
 		
-		RLRequestQueue *queue = [RLRequestQueue sharedQueue];
+		RLRequestQueue *queue = [RLRequestQueue singleton];
 		RLDownloadOperation *op = [[RLDownloadOperation alloc] initWithURLString:self.thumbnailURLString 
 																		priority:RLOperationHigh 
 																 processingBlock:processingBlock

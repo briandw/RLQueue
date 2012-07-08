@@ -45,7 +45,7 @@
     volatile NSInteger _nextOperationNumber;
 }
 
-+ (RLRequestQueue *)sharedQueue;
++ (RLRequestQueue *)singleton;
 
 - (void)startQueue;
 - (void)stopQueue;

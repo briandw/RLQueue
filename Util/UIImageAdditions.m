@@ -46,7 +46,7 @@ CGContextRef CreateARGBBitmapContext (RLIntSize size)
     UInt16 pixelsWide = size.width;
     UInt16 pixelsHigh = size.height;
 
-    bitmapBytesPerRow   = (pixelsWide * kOGBytesPerPixel);
+    bitmapBytesPerRow   = (pixelsWide * kRLBytesPerPixel);
     bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
     
     // Use the generic RGB color space.
@@ -74,7 +74,7 @@ CGContextRef CreateARGBBitmapContext (RLIntSize size)
     context = CGBitmapContextCreate (bitmapData,
                                      pixelsWide,
                                      pixelsHigh,
-                                     kOGBitsPerComponent,      // bits per component
+                                     kRLBitsPerComponent,      // bits per component
                                      bitmapBytesPerRow,
                                      colorSpace,
                                      (kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder16Little));
@@ -194,7 +194,7 @@ void RLProviderReleaseData (void *info, const void *data, size_t size)
     
     CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
     
-    NSUInteger numBytes = imgSize.width*imgSize.height*kOGBytesPerPixel;
+    NSUInteger numBytes = imgSize.width*imgSize.height*kRLBytesPerPixel;
     
     NSAssert2((dataBytesLength == numBytes), @"wrong number of bytes, expected %iu, found %iu", numBytes, dataBytesLength);
     
@@ -204,9 +204,9 @@ void RLProviderReleaseData (void *info, const void *data, size_t size)
                                                              RLProviderReleaseData);
     CGImageRef cgImage = CGImageCreate (imgSize.width,
                                         imgSize.height,                              
-                                        kOGBitsPerComponent,   // bits per component
-                                        kOGBitsPerPixel,        //bits per pixel
-                                        imgSize.width*kOGBytesPerPixel,//bytes per row
+                                        kRLBitsPerComponent,   // bits per component
+                                        kRLBitsPerPixel,        //bits per pixel
+                                        imgSize.width*kRLBytesPerPixel,//bytes per row
                                         colorSpace,
                                         (kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder16Little),
                                         provider,
@@ -248,7 +248,7 @@ void RLProviderReleaseData (void *info, const void *data, size_t size)
         
         if (data)
         {
-            dataShort = [NSData dataWithBytes:data length:kOGBytesPerPixel*w*h];
+            dataShort = [NSData dataWithBytes:data length:kRLBytesPerPixel*w*h];
             free(data);
             data = NULL;
         }

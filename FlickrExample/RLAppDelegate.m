@@ -27,6 +27,7 @@
 #import "RLRequestQueue.h"
 #import "RLOperation.h"
 #import "RLFlickrSearchOperation.h"
+#import "RLImageDB.h"
 
 @implementation RLAppDelegate
 
@@ -34,6 +35,9 @@
 
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions
 {
+    RLImageDB *imageDB = [RLImageDB singleton];
+    [imageDB open];
+    
     self.window = [[UIWindow alloc] initWithFrame:[[UIScreen mainScreen] bounds]];
     // Override point for customization after application launch.
 	if ([[UIDevice currentDevice] userInterfaceIdiom] == UIUserInterfaceIdiomPhone) {
@@ -43,7 +47,7 @@
 	}
     [self.window makeKeyAndVisible];
 	
-	RLRequestQueue *queue = [RLRequestQueue sharedQueue];
+	RLRequestQueue *queue = [RLRequestQueue singleton];
 		
 	RLOperation *op = [[RLFlickrSearchOperation alloc] initWithSearchString:@"Leopard" andPriority:RLOperationHigh];
 	[queue addOperation:op];
