@@ -98,6 +98,7 @@
     
 	RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
 	
+    cell.layer.contentsGravity = kCAGravityCenter;
     cell.layer.contents = (id)stub.thumbnail;
     
     return cell;
@@ -114,6 +115,12 @@
      // Pass the selected object to the new view controller.
      [self.navigationController pushViewController:detailViewController animated:YES];
      */
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
+    return stub.thumbnailSize.height;
 }
 
 @end

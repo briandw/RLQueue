@@ -41,6 +41,7 @@
 @property (nonatomic, strong)NSString *photoURLString;
 @property (nonatomic, strong)NSString *thumbnailURLString;
 @property (nonatomic)        UInt16    thumbnailId;
+@property (nonatomic)       CGSize     thumbnailSize;
 @property (nonatomic, strong)NSData *largeImageData;
 @property (nonatomic, assign)int downloadErrorCount;
 

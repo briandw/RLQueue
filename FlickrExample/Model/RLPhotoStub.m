@@ -38,6 +38,7 @@
 @synthesize thumbnailURLString = _thumbnailURLString;
 @synthesize largeImageData = _largeImageData;
 @synthesize downloadErrorCount = _downloadErrorCount;
+@synthesize thumbnailSize = _thumbnailSize;
 
 + (RLPhotoStub *)stubWithDictionary:(NSDictionary *)dict
 {
@@ -109,15 +110,20 @@
             CGSize size = image.size;
             if (size.width > dbMaxImageWidth || size.height > dbMaxImageHeight)
             {
-                
+                //scale the image to fit our max
                 if (size.width > size.height)
                 {
-                    
+                    size.height = (dbMaxImageWidth/size.width);
+                    size.width = dbMaxImageWidth;
                 } else
                 {
-                    
+                    size.width = (dbMaxImageHeight/size.height);
+                    size.height = dbMaxImageHeight;
                 }
             }
+            
+            self.thumbnailSize = size;
+            
             RLIntSize tmpSize = RLIntSizeMake(size.width, size.height);
             self.thumbnailId = [imageDB saveImage:image forSize:tmpSize]; 
 		};
@@ -155,6 +161,7 @@
     [encoder encodeObject:_photoURLString forKey:@"photoURLString"];
     [encoder encodeObject:_thumbnailURLString forKey:@"thumbnailURLString"];
     [encoder encodeObject:[NSNumber numberWithUnsignedInt:_thumbnailId] forKey:@"thumbnailID"];
+    [encoder encodeCGSize:_thumbnailSize forKey:@"thumbnailSize"];
 }
 
 - (id)initWithCoder:(NSCoder *)decoder
@@ -166,6 +173,7 @@
         self.photoURLString = [decoder decodeObjectForKey:@"photoURLString"];
         self.thumbnailURLString = [decoder decodeObjectForKey:@"thumbnailURLString"];
         self.thumbnailId = [[decoder decodeObjectForKey:@"thumbnailID"] intValue];
+        self.thumbnailSize = [decoder decodeCGSizeForKey:@"thumbnailSize"];
         
         self.downloadErrorCount = 0;
     }
