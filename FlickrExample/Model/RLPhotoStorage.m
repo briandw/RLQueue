@@ -25,6 +25,7 @@
 #import "RLPhotoStorage.h"
 #import "RLPhotoStub.h"
 #import "RLImageDB.h"
+#include "SynthesizeSingleton.h"
 
 @interface RLPhotoStorage ()
     
@@ -36,23 +37,36 @@
 @synthesize imageDB = _imageDB;
 
 NSString *const RLNewPhotosNotification = @"RLNewPhotosNotification";
+NSString *const RLPhotoDataKey = @"RLPhotoDataKey";
 
-+ (RLPhotoStorage *)sharedStorage
+SYNTHESIZE_SINGLETON_FOR_CLASS (RLPhotoStorage);
+
++ (NSString *)storageFile
 {
-    static dispatch_once_t once;
-    static RLPhotoStorage *sharedStorage;
-    dispatch_once(&once, ^ { sharedStorage = [[self alloc] init]; });
-    return sharedStorage;
+    static NSString *storagePath = nil;
+    
+    if (!storagePath)
+    {
+        NSArray *paths = NSSearchPathForDirectoriesInDomains(NSCachesDirectory, NSUserDomainMask, YES);
+        if ([paths count] > 0)
+        {
+            NSString *bundleName = [[[NSBundle mainBundle] infoDictionary] objectForKey:@"CFBundleIdentifier"];
+            storagePath = [[paths objectAtIndex:0] stringByAppendingPathComponent:bundleName];
+        }
+    }
+    
+    return [NSString stringWithFormat:@"%@/metaStore.data", storagePath];
 }
+
 
 - (id)init
 {
     self = [super init];
     if (self)
     {
-        _photosDict = [NSMutableDictionary dictionaryWithCapacity:300];
-        _imageDB = [[RLImageDB alloc] init];
-        [_imageDB open];
+        [self load];
+        _imageDB = [RLImageDB singleton];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(save) name:RLNewPhotosNotification object:nil];
     }
     return self;
 }
@@ -66,7 +80,7 @@ NSString *const RLNewPhotosNotification = @"RLNewPhotosNotification";
 {
 	[_photosDict setObject:stub forKey:stub.photoId];
 	
-	//
+	//used to notify the thumbnail view that new photos are ready to display
 	NSNotification *note = [NSNotification notificationWithName:RLNewPhotosNotification object:self];
 	
 	[[NSNotificationQueue defaultQueue] enqueueNotification: note
@@ -78,6 +92,35 @@ NSString *const RLNewPhotosNotification = @"RLNewPhotosNotification";
 - (NSArray *)photosArray
 {
 	return [_photosDict allValues];
+}
+
+- (void)save
+{
+    
+    NSMutableData *data = [[NSMutableData alloc] init];
+    NSKeyedArchiver *archiver = [[NSKeyedArchiver alloc] initForWritingWithMutableData:data];
+    [archiver encodeObject:_photosDict forKey:RLPhotoDataKey];
+    [archiver finishEncoding];
+    [data writeToFile:[RLPhotoStorage storageFile] atomically:YES];
+}
+
+- (void)load
+{
+    NSString *storagePath = [RLPhotoStorage storageFile];
+    BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:storagePath];
+    
+    if (exists) {
+        
+        NSData *data = [[NSMutableData alloc]initWithContentsOfFile:storagePath];
+        NSKeyedUnarchiver *unarchiver = [[NSKeyedUnarchiver alloc] initForReadingWithData:data];
+        _photosDict = [unarchiver decodeObjectForKey:RLPhotoDataKey];
+        [unarchiver finishDecoding];
+
+    } else {
+        
+         _photosDict = [NSMutableDictionary dictionaryWithCapacity:300];
+    }
+   
 }
 
 @end

@@ -23,7 +23,7 @@
 
 #import <Foundation/Foundation.h>
 
-@interface RLPhotoStub : NSObject
+@interface RLPhotoStub : NSObject <NSCoding>
 {
 	
 }

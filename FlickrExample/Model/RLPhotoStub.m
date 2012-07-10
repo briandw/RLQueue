@@ -41,11 +41,11 @@
 
 + (RLPhotoStub *)stubWithDictionary:(NSDictionary *)dict
 {
-	NSString *photoId = [dict objectForKey:@"photoId"];
+	NSString *photoId = [dict objectForKey:@"id"];
 	
-	RLPhotoStub *stub = [[RLPhotoStorage sharedStorage] getStubWithId:photoId];
+	RLPhotoStub *stub = [[RLPhotoStorage singleton] getStubWithId:photoId];
 	
-	if (!stub)
+	if (photoId && !stub)
 	{
 		stub = [[RLPhotoStub alloc] initWithDictionary:dict];
 	}
@@ -99,7 +99,6 @@
 
 - (void)loadThumbnail
 {
-
 	if (self.thumbnailId == RLImgDBNotFound)
     {
 		OperationBlockType processingBlock = ^(RLOperation *operation)
@@ -125,7 +124,7 @@
 		
 		OperationBlockType successBlock = ^(RLOperation *operation)
 		{
-			[[RLPhotoStorage sharedStorage] addPhoto:self];
+			[[RLPhotoStorage singleton] addPhoto:self];
 		};
 		
 		OperationErrorBlockType errorBlock = ^(RLOperation *operation, NSError *error)
@@ -148,5 +147,30 @@
 	
 }
 
+- (void)encodeWithCoder:(NSCoder *)encoder
+{
+
+    [encoder encodeObject:_photoId forKey:@"photoID"];
+    [encoder encodeObject:_title forKey:@"title"];
+    [encoder encodeObject:_photoURLString forKey:@"photoURLString"];
+    [encoder encodeObject:_thumbnailURLString forKey:@"thumbnailURLString"];
+    [encoder encodeObject:[NSNumber numberWithUnsignedInt:_thumbnailId] forKey:@"thumbnailID"];
+}
+
+- (id)initWithCoder:(NSCoder *)decoder
+{
+    if (self = [super init])
+    {
+        self.photoId = [decoder decodeObjectForKey:@"photoID"];
+        self.title = [decoder decodeObjectForKey:@"title"];
+        self.photoURLString = [decoder decodeObjectForKey:@"photoURLString"];
+        self.thumbnailURLString = [decoder decodeObjectForKey:@"thumbnailURLString"];
+        self.thumbnailId = [[decoder decodeObjectForKey:@"thumbnailID"] intValue];
+        
+        self.downloadErrorCount = 0;
+    }
+    
+    return self;
+}
 
 @end

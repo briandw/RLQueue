@@ -47,7 +47,7 @@
 {
     [super viewWillAppear:animated];
 	[[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(newPhotos:) name:RLNewPhotosNotification object:nil];
-	self.photos = [[RLPhotoStorage sharedStorage] photosArray];
+	self.photos = [[RLPhotoStorage singleton] photosArray];
 }
 
 - (void)viewWillDisappear:(BOOL)animated
@@ -64,7 +64,7 @@
 
 - (void)newPhotos:(NSNotification *)note
 {
-	self.photos = [[RLPhotoStorage sharedStorage] photosArray];
+	self.photos = [[RLPhotoStorage singleton] photosArray];
 	[self.tableView reloadData];
 }
 

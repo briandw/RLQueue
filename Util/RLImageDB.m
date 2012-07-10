@@ -84,6 +84,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
 
 - (id)init
 {
+
     self = [super init];
     if (self)
     {
@@ -91,6 +92,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
         _openSlots = dbImagesPerFile;
         _mapFileDescriptor = -1;
         _isOpen = NO;
+        [self open];
     }
     
     return self;

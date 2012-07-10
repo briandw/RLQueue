@@ -34,7 +34,7 @@ extern NSString *const RLNewPhotosNotification;
 	NSMutableDictionary *_photosDict;
 }
 
-+ (RLPhotoStorage *)sharedStorage;
++ (RLPhotoStorage *)singleton;
 
 - (void)addPhoto:(RLPhotoStub *)stub;
 - (RLPhotoStub *)getStubWithId:(NSString *)photoId;
