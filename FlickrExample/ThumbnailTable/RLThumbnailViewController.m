@@ -79,7 +79,7 @@
 {
 	if (section == 0)
 	{
-		return [self.photos count];
+		return [self.photos count]/4;
 	}
 	else
 	{
@@ -89,17 +89,42 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    static NSString *CellIdentifier = @"Cell";
+    static NSString *CellIdentifier = @"RLCell";
     
     UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:CellIdentifier];
     if (cell == nil) {
         cell = [[UITableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
+        
+        CALayer *cellLayer = cell.layer;
+       //  NSArray *layers = cell.layer.sublayers;
+        
+        for (int i = 0; i < 4; i += 1) {
+            
+            CALayer *layer = [CALayer layer];
+            [cellLayer addSublayer:layer];
+        }
     }
     
-	RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
-	
-    cell.layer.contentsGravity = kCAGravityCenter;
-    cell.layer.contents = (id)stub.thumbnail;
+    int row = indexPath.row;
+    NSArray *layers = cell.layer.sublayers;
+    
+    NSAssert([layers count] >= 4, @"Expecting 4 sublayers");
+    
+    for (int i = 0; i < 4; i +=1) { 
+        
+        CALayer *layer = [layers objectAtIndex:i+1];
+        layer.anchorPoint = CGPointMake(0, 0);
+        layer.frame = CGRectMake(i*80.0, 0, 75.0, 75.0);
+        
+        int index = row*4+i;
+        if (index < [_photos count]) {
+            
+            RLPhotoStub *stub = [_photos objectAtIndex:index];
+            
+            layer.contentsGravity = kCAGravityCenter;
+            layer.contents = (id)stub.thumbnail;
+        }
+    }
     
     return cell;
 }
@@ -108,19 +133,13 @@
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
-    // Navigation logic may go here. Create and push another view controller.
-    /*
-     <#DetailViewController#> *detailViewController = [[<#DetailViewController#> alloc] initWithNibName:@"<#Nib name#>" bundle:nil];
-     // ...
-     // Pass the selected object to the new view controller.
-     [self.navigationController pushViewController:detailViewController animated:YES];
-     */
+
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
-    return stub.thumbnailSize.height;
+    return stub.thumbnailSize.height+6.0;
 }
 
 @end
