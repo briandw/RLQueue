@@ -64,7 +64,7 @@ typedef struct
 
 SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
 
-+ (NSString *)dbFilePath
++ (NSString *)dbCacheDir
 {
     static NSString *dbDirPath = nil;
     
@@ -78,7 +78,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
         }
     }
     
-   return [NSString stringWithFormat:@"%@/imgDB.dat", dbDirPath];
+    return dbDirPath;
 }
 
 
@@ -111,21 +111,26 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
     if (!_isOpen)
     {        
         
-        NSString *imageDBPath = [RLImageDB dbFilePath];
+        NSString *imageDBPath = [NSString stringWithFormat:@"%@/imgDB.dat", [RLImageDB dbCacheDir]];
         BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
         
         //if there is no file, make one
         _isOpen = YES;
         if (!exists)
         {
+            NSError *error = nil;
+            
+            [[NSFileManager defaultManager] createDirectoryAtPath:[RLImageDB dbCacheDir] withIntermediateDirectories:YES attributes:nil error:&error];
+             
+            _isOpen = [[NSFileManager defaultManager] createFileAtPath:imageDBPath contents:nil attributes:nil];
             
             NSAssert(sizeof(RLImageHeader) == dbHeaderSize,@"doh math is hard");
             void *zeroData = malloc(dbFileLength);
             memset(zeroData, 0, dbHeaderLength);
             NSData *tmpData = [NSData dataWithBytes:zeroData length:dbFileLength];
             
-            NSError *error = nil;
-            _isOpen = [tmpData writeToFile:imageDBPath options:(NSDataWritingAtomic |NSDataWritingFileProtectionNone ) error:&error];
+            
+            _isOpen = [tmpData writeToFile:imageDBPath options:(NSDataWritingFileProtectionNone ) error:&error];
             
             if(!_isOpen)NSLog(@"Error, %@", error);
         }
@@ -377,7 +382,8 @@ void RLImageDBReleaseData (void *info, const void *data, size_t size)
     
     RLAssert(!_isOpen, @"File must be closed to delete");
     
-    NSString *imageDBPath = [RLImageDB dbFilePath];
+    NSString *imageDBPath = [NSString stringWithFormat:@"%@/imgDB.dat", [RLImageDB dbCacheDir]];
+    
     BOOL exists = [[NSFileManager defaultManager] fileExistsAtPath:imageDBPath];
 
     if (exists)

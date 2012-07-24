@@ -25,6 +25,7 @@
 
 #import "RLFlickrSearchOperation.h"
 #import "JSONKit.h"
+#import "RLPhotoStorage.h"
 #import "RLPhotoStub.h"
 
 #include "FlickrKey.h"
@@ -62,6 +63,7 @@
 			for (NSDictionary *photoDict in photos)
 			{
 				RLPhotoStub *photoStub = [RLPhotoStub stubWithDictionary:photoDict];
+                [[RLPhotoStorage singleton] addPhoto:photoStub];
 				[self.photoStubs addObject:photoStub];
 				[photoStub loadThumbnail];
 			} 

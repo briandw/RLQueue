@@ -93,6 +93,14 @@
         
         RLImageDB *imageDB = [RLImageDB singleton];
         return [imageDB cgImageForSlot:self.thumbnailId];
+    } else {
+        static CGImageRef placeholder;
+        
+        if(!placeholder) {
+            placeholder = [UIImage imageNamed:@"placeholder"].CGImage;
+        }
+        
+        return placeholder;
     }
     
     return NULL;

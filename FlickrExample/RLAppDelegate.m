@@ -48,7 +48,7 @@
 	
 	RLRequestQueue *queue = [RLRequestQueue singleton];
 		
-	RLOperation *op = [[RLFlickrSearchOperation alloc] initWithSearchString:@"Leopard" andPriority:RLOperationHigh];
+	RLOperation *op = [[RLFlickrSearchOperation alloc] initWithSearchString:@"cupcake" andPriority:RLOperationHigh];
 	[queue addOperation:op];
 	
 	[queue startQueue];
