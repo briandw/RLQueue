@@ -185,7 +185,7 @@
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     RLPhotoStub *stub = [_photos objectAtIndex:indexPath.row];
-    return stub.thumbnailSize.height+_marginWidth;
+    return stub.thumbnailSize.height+7;
 }
 
 @end
