@@ -23,8 +23,8 @@
 
 #else
 
-#define OGAssert(condition, message) if(!(condition))NSLog(@"RLAssert fired: %@", message)
-#define OGLog(fmt, ...)
+#define RLAssert(condition, message) if(!(condition))NSLog(@"RLAssert fired: %@", message)
+#define RLLog(fmt, ...)
 #define Debugger
 
 #endif

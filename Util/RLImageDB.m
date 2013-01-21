@@ -128,7 +128,7 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLImageDB)
             void *zeroData = malloc(dbFileLength);
             memset(zeroData, 0, dbHeaderLength);
             NSData *tmpData = [NSData dataWithBytes:zeroData length:dbFileLength];
-            
+            free(zeroData);
             
             _isOpen = [tmpData writeToFile:imageDBPath options:(NSDataWritingFileProtectionNone ) error:&error];
             

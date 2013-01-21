@@ -34,6 +34,8 @@
 @synthesize photoURLString = _photoURLString;
 @synthesize title = _title;
 @synthesize photoId = _photoId;
+@synthesize largePhotoId = _largePhotoId;
+@synthesize photoSize = _photoSize;
 @synthesize thumbnailId = _thumbnailId;
 @synthesize thumbnailURLString = _thumbnailURLString;
 @synthesize largeImageData = _largeImageData;
@@ -158,18 +160,63 @@
 
 - (void)loadLargeImage
 {
-	
+    
+    OperationBlockType processingBlock = ^(RLOperation *operation)
+    {
+        RLDownloadOperation *op = (RLDownloadOperation *)operation;
+        RLImageDB *imageDB = [RLImageDB singleton];
+        UIImage *image = [UIImage imageWithData:op.data];
+        CGSize size = image.size;
+        if (size.width > dbMaxImageWidth || size.height > dbMaxImageHeight)
+        {
+            //scale the image to fit our max
+            if (size.width > size.height)
+            {
+                size.height = (dbMaxImageWidth/size.width);
+                size.width = dbMaxImageWidth;
+            } else
+            {
+                size.width = (dbMaxImageHeight/size.height);
+                size.height = dbMaxImageHeight;
+            }
+        }
+        
+        self.thumbnailSize = size;
+        
+        RLIntSize tmpSize = RLIntSizeMake(size.width, size.height);
+        self.thumbnailId = [imageDB saveImage:image forSize:tmpSize];
+    };
+    
+    OperationBlockType successBlock = ^(RLOperation *operation)
+    {
+        [[RLPhotoStorage singleton] addPhoto:self];
+    };
+    
+    OperationErrorBlockType errorBlock = ^(RLOperation *operation, NSError *error)
+    {
+        self.downloadErrorCount = self.downloadErrorCount+1;
+    };
+
+    
+	RLRequestQueue *queue = [RLRequestQueue singleton];
+    RLDownloadOperation *op = [[RLDownloadOperation alloc] initWithURLString:self.photoURLString
+                                                                    priority:RLOperationHigh
+                                                             processingBlock:processingBlock
+                                                                successBlock:successBlock
+                                                                  errorBlock:errorBlock];
+    [queue addOperation:op];
 }
 
 - (void)encodeWithCoder:(NSCoder *)encoder
 {
-
     [encoder encodeObject:_photoId forKey:@"photoID"];
+    [encoder encodeObject:[NSNumber numberWithUnsignedInt:_largePhotoId] forKey:@"largePhotoId"];
     [encoder encodeObject:_title forKey:@"title"];
     [encoder encodeObject:_photoURLString forKey:@"photoURLString"];
     [encoder encodeObject:_thumbnailURLString forKey:@"thumbnailURLString"];
     [encoder encodeObject:[NSNumber numberWithUnsignedInt:_thumbnailId] forKey:@"thumbnailID"];
     [encoder encodeCGSize:_thumbnailSize forKey:@"thumbnailSize"];
+    [encoder encodeCGSize:_photoSize forKey:@"photoSize"];
 }
 
 - (id)initWithCoder:(NSCoder *)decoder
@@ -182,6 +229,7 @@
         self.thumbnailURLString = [decoder decodeObjectForKey:@"thumbnailURLString"];
         self.thumbnailId = [[decoder decodeObjectForKey:@"thumbnailID"] intValue];
         self.thumbnailSize = [decoder decodeCGSizeForKey:@"thumbnailSize"];
+        self.photoSize = [decoder decodeCGSizeForKey:@"photoSize"];
         
         self.downloadErrorCount = 0;
     }

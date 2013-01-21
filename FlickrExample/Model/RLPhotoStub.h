@@ -37,12 +37,14 @@
 - (void)loadLargeImage;
 
 @property (nonatomic, strong)NSString *photoId;
+@property (nonatomic)        UInt16    largePhotoId;
+@property (nonatomic)        CGSize    photoSize;
 @property (nonatomic, strong)NSString *title;
 @property (nonatomic, strong)NSString *photoURLString;
 @property (nonatomic, strong)NSString *thumbnailURLString;
 @property (nonatomic)        UInt16    thumbnailId;
-@property (nonatomic)       CGSize     thumbnailSize;
-@property (nonatomic, strong)NSData *largeImageData;
+@property (nonatomic)        CGSize    thumbnailSize;
+@property (nonatomic, strong)NSData   *largeImageData;
 @property (nonatomic, assign)int downloadErrorCount;
 
 @end

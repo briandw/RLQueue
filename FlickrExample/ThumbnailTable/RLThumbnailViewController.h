@@ -25,7 +25,11 @@
 #import <UIKit/UIKit.h>
 
 @interface RLThumbnailViewController : UITableViewController
-
+{
+    NSInteger _imagesPerRow;
+    NSInteger _thumbnailSize;
+    NSInteger _marginWidth;
+}
 
 @property(nonatomic, strong)NSArray *photos;
 

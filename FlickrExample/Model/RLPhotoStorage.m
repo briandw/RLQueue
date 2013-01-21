@@ -120,7 +120,6 @@ SYNTHESIZE_SINGLETON_FOR_CLASS (RLPhotoStorage);
         
          _photosDict = [NSMutableDictionary dictionaryWithCapacity:300];
     }
-   
 }
 
 @end

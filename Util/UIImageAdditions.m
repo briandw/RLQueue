@@ -38,8 +38,6 @@ CGContextRef CreateARGBBitmapContext (RLIntSize size)
 {
     CGContextRef    context = NULL;
     CGColorSpaceRef colorSpace;
-    void *          bitmapData;
-    int             bitmapByteCount;
     int             bitmapBytesPerRow;
     
     // Get image width, height. We'll use the entire image.
@@ -47,7 +45,6 @@ CGContextRef CreateARGBBitmapContext (RLIntSize size)
     UInt16 pixelsHigh = size.height;
 
     bitmapBytesPerRow   = (pixelsWide * kRLBytesPerPixel);
-    bitmapByteCount     = (bitmapBytesPerRow * pixelsHigh);
     
     // Use the generic RGB color space.
     colorSpace = CGColorSpaceCreateDeviceRGB();
@@ -57,32 +54,20 @@ CGContextRef CreateARGBBitmapContext (RLIntSize size)
         return NULL;
     }
     
-    // Allocate memory for image data. This is the destination in memory
-    // where any drawing to the bitmap context will be rendered.
-    bitmapData = malloc( bitmapByteCount );
-    if (bitmapData == NULL) 
-    {
-        fprintf (stderr, "Memory not allocated!");
-        CGColorSpaceRelease( colorSpace );
-        return NULL;
-    }
-    
+       
     // Create the bitmap context. We want pre-multiplied BGRA, 8-bits 
     // per component. Regardless of what the source image format is 
     // (CMYK, Grayscale, and so on) it will be converted over to the format
     // specified here by CGBitmapContextCreate.
-    context = CGBitmapContextCreate (bitmapData,
+    
+    //Pass in NULL for the data, CG will allocate the data in iOS 4.0 and later
+    context = CGBitmapContextCreate (NULL,
                                      pixelsWide,
                                      pixelsHigh,
                                      kRLBitsPerComponent,      // bits per component
                                      bitmapBytesPerRow,
                                      colorSpace,
                                      (kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder16Little));
-    if (context == NULL)
-    {
-        free (bitmapData);
-        fprintf (stderr, "Context not created!");
-    }
     
     // Make sure and release colorspace before returning
     CGColorSpaceRelease( colorSpace );
